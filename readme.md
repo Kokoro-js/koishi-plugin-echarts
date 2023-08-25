@@ -18,10 +18,12 @@ package.json
 ....
 ```
 ```
+// 务必 import，所有服务都要这样
 import {} from "koishi-plugin-echarts"
 
-eg.
-  const option = {
+...
+// 具体代码实例，仅供参考
+const option = {
   legend: {},
   tooltip: {},
   dataset: {
