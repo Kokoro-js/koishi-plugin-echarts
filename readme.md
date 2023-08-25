@@ -2,14 +2,23 @@
 
 [![npm](https://img.shields.io/npm/v/koishi-plugin-echarts?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-echarts)
 
-为 Koishi 提供 Echart，[主题相关](https://echarts.apache.org/handbook/zh/concepts/style) | [学习 Options](https://echarts.apache.org/handbook/zh/concepts/dataset)
+为 Koishi 提供 Echart，
 
+[学习 Options](https://echarts.apache.org/handbook/zh/concepts/dataset)
+| [Echarts 官网实例](https://echarts.apache.org/examples/zh/index.html)
+| [主题相关](https://echarts.apache.org/handbook/zh/concepts/style)
 # 使用指南
-将该插件添加到 peerDependences
+```
+package.json
+....
+  "peerDependencies": {
+    "koishi": "^4.14.0",
+    "koishi-plugin-echarts": "^最新版"
+  }
+....
+```
 ```
 import {} from "koishi-plugin-echarts"
-
-ctx.echarts.createChart(width: number, height: number, options: echarts.EChartsOption, theme?: string) => Buffer(png)
 
 eg.
   const option = {
@@ -33,7 +42,9 @@ eg.
   series: [{ type: 'bar' }, { type: 'bar' }, { type: 'bar' }]
 };
 
-const buffer = ctx.echarts.createChart(1000, 700, option)
+const chart = ctx.echarts.createChart(1000, 700, option)
+const buffer = chart.canvas.toBuffer("image/png")
+chart.dispose() // 除非你还想用否则务必销毁实例
 return h.image(buffer, "image/png");
 ```
-  
+

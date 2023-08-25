@@ -1,9 +1,10 @@
 import { Context, h, Logger, Schema, Service } from "koishi";
 import {} from "koishi-plugin-skia-canvas";
-import { init } from "echarts";
 import * as echarts from "echarts";
 import path from "path";
 import * as fs from "fs";
+
+export { echarts };
 
 export const name = "echarts";
 const logger = new Logger(name);
@@ -35,9 +36,20 @@ export class ECharts extends Service {
       options.animation = false;
     }
 
-    let chart = init(_canvas as any, theme || this.config.defaultTheme);
+    let chart = echarts.init(_canvas as any, theme || this.config.defaultTheme);
     chart.setOption(options);
-    return _canvas.toBuffer("image/png");
+
+    const disposeChart = () => {
+      chart.dispose();
+      chart = null;
+      _canvas = null;
+    };
+
+    return {
+      canvas: _canvas,
+      chart: chart,
+      dispose: disposeChart,
+    };
   }
 
   constructor(
@@ -58,6 +70,7 @@ export class ECharts extends Service {
         return img;
       },
     });
+
     const themesDir = path.resolve(ctx.baseDir, config.themesDir);
     fs.mkdirSync(themesDir, { recursive: true });
     const files = fs.readdirSync(themesDir);
@@ -82,7 +95,7 @@ export class ECharts extends Service {
       .option("width", "-w <wid:posint>")
       .option("height", "-t <hei:posint>")
       .action(async ({ options }, set) => {
-        const buffer = await this.createChart(options.width, options.height, {
+        const chart = await this.createChart(options.width, options.height, {
           title: {
             text: "ECharts 演示",
           },
@@ -102,6 +115,8 @@ export class ECharts extends Service {
             },
           ],
         });
+        const buffer = chart.canvas.toBuffer("image/png");
+        chart.dispose();
         return h.image(buffer, "image/png");
       });
 
