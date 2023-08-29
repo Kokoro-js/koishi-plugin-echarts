@@ -61,12 +61,17 @@ export class ECharts extends Service {
       createCanvas() {
         return ctx.canvas.createCanvas(32, 32) as any;
       },
+      // https://github.com/apache/echarts/issues/19054
       loadImage(src, onload, onerror) {
+        const commaIdx = src.indexOf(",");
+        const encoding =
+          src.lastIndexOf("base64", commaIdx) < 0 ? "utf-8" : "base64";
+        const imgBuffer = Buffer.from(src.slice(commaIdx + 1), encoding);
         const img = new ctx.canvas.Image() as any;
         // 必须要绑定 this context.
         img.onload = onload.bind(img);
         img.onerror = onerror.bind(img);
-        img.src = Buffer.from(src, "base64");
+        img.src = imgBuffer;
         return img;
       },
     });
