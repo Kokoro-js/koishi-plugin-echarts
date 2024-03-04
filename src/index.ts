@@ -2,13 +2,11 @@ import { Context, h, Logger, Schema, Service } from "koishi";
 import {} from "koishi-plugin-skia-canvas";
 import * as echarts from "echarts";
 import path from "path";
-import * as fs from "fs";
+import fs from "fs";
 
 export { echarts };
 
 export const name = "echarts";
-const logger = new Logger(name);
-export const using = ["canvas"];
 
 declare module "koishi" {
   interface Context {
@@ -17,6 +15,7 @@ declare module "koishi" {
 }
 
 export class ECharts extends Service {
+  static inject = ["canvas"];
   async createChart(
     width: number = this.config.width,
     height: number = this.config.height,
@@ -64,6 +63,11 @@ export class ECharts extends Service {
     return buffer;
   }
 
+  // @ts-ignore
+  get logger(): Logger {
+    return this.ctx.logger(name)
+  }
+
   constructor(
     ctx: Context,
     public config: ECharts.Config,
@@ -105,7 +109,7 @@ export class ECharts extends Service {
 
         // 注册为 ECharts 主题
         echarts.registerTheme(themeName, themeObj);
-        logger.success(`Theme "${themeName}" registered successfully!`);
+        this.logger.success(`Theme "${themeName}" registered successfully!`);
       }
     });
     ctx
@@ -159,11 +163,10 @@ export class ECharts extends Service {
       } as any);
       return h.image(chart, "image/png");
     });
-    logger.success("Echarts 启动成功。");
+    this.logger.success("Echarts 启动成功。");
   }
 }
 
-Context.service("echarts", ECharts);
 export default ECharts;
 
 export namespace ECharts {
