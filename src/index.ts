@@ -78,7 +78,9 @@ export class ECharts extends Service {
   ) {
     super(ctx, "echarts");
     if (ctx["stats"] !== undefined) {
-      ctx.plugin(EXT_stats);
+      ctx.inject(["echarts", "stats"], (ctx) => {
+        ctx.plugin(EXT_stats);
+      });
     }
     echarts.setPlatformAPI({
       createCanvas() {
