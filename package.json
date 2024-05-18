@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-echarts",
   "description": "Provide echarts with Canvas in Koishi",
-  "version": "0.4.0",
+  "version": "0.4.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
