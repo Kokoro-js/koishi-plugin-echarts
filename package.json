@@ -22,6 +22,9 @@
     "service": {
       "required": [
         "canvas"
+      ],
+      "optional": [
+        "stats"
       ]
     }
   },
@@ -33,9 +36,11 @@
   ],
   "peerDependencies": {
     "koishi": "^4.17.0",
-    "koishi-plugin-skia-canvas": "^0.4.0"
+    "koishi-plugin-skia-canvas": "^0.4.0",
+    "koishi-plugin-stats": "^0.2.0"
   },
   "dependencies": {
-    "echarts": "^5.5.0"
+    "dates-range-parser": "1.0.5",
+    "echarts": "^5.4.3"
   }
 }

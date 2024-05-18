@@ -3,6 +3,7 @@ import {} from "koishi-plugin-skia-canvas";
 import * as echarts from "echarts";
 import path from "path";
 import fs from "fs";
+import EXT_stats from "./ext_stats";
 
 export { echarts };
 
@@ -15,7 +16,10 @@ declare module "koishi" {
 }
 
 export class ECharts extends Service {
-  static inject = ["canvas"];
+  static inject = {
+    required: ["canvas"],
+    optional: ["stats"],
+  };
   async createChart(
     width: number = this.config.width,
     height: number = this.config.height,
@@ -65,7 +69,7 @@ export class ECharts extends Service {
 
   // @ts-ignore
   get logger(): Logger {
-    return this.ctx.logger(name)
+    return this.ctx.logger(name);
   }
 
   constructor(
@@ -73,6 +77,9 @@ export class ECharts extends Service {
     public config: ECharts.Config,
   ) {
     super(ctx, "echarts");
+    if (ctx["stats"] !== undefined) {
+      ctx.plugin(EXT_stats);
+    }
     echarts.setPlatformAPI({
       createCanvas() {
         return ctx.canvas.createCanvas(32, 32) as any;
