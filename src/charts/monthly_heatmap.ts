@@ -1,5 +1,4 @@
 import type { QueryResult } from "koishi-plugin-stats";
-import echarts from "echarts";
 
 export function formatDataForEChartsHeatmap(data: QueryResult) {
   // 假设response是从Prometheus API获取的完整响应体

@@ -40,7 +40,6 @@
     "koishi-plugin-stats": "^0.2.0"
   },
   "dependencies": {
-    "dates-range-parser": "1.0.5",
     "echarts": "^5.4.3"
   }
 }

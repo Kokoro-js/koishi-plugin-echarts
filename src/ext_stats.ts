@@ -1,18 +1,19 @@
 // 整体导出对象形式的插件
 import { Context, h } from "koishi";
 import type {} from "./index";
-import { generateChartOptions } from "koishi-plugin-stats";
-import DatesRangeParser from "dates-range-parser";
+import { generateChartOptions, TimeRangeParser } from "koishi-plugin-stats";
+
 import {
   formatDataForEChartsHeatmap,
   generateHeatmapOption,
 } from "./charts/monthly_heatmap";
+import { generateRankOption } from "./charts/message_rank";
 
 export interface Config {}
 
 export const name = "echarts-stats";
 
-export default function apply(ctx: Context, config: Config) {
+export default async function apply(ctx: Context, config: Config) {
   ctx
     .command("stats.chat [rangeInput:string]", "生成聊天频率图表。")
     .option("step", "-s [step]")
@@ -22,27 +23,29 @@ export default function apply(ctx: Context, config: Config) {
     .action(async ({ session, options }, rangeInput) => {
       const rangeString = rangeInput ?? "now -> 1d";
       const guildId = options.guildId ?? session.guildId;
-      const range = DatesRangeParser.parse(rangeString).value as {
-        from: number;
-        to: number;
-      };
+      const range = TimeRangeParser.parseDateInput(rangeString);
+      if ("error" in range) {
+        return range.error;
+      }
+
       const step = (options.step ?? 30) * 60; // step 单位为分钟，转化为秒
       const result = await ctx.stats.queryClient.rangeQuery(
         `count(message_length{guildId="${guildId}"})`,
-        range.from,
-        range.to,
+        range.start,
+        range.end,
         step,
       );
+
       const option = generateChartOptions(
         result,
-        `本群聊天频次 (${new Date(range.from).toLocaleString()} - ${new Date(range.to).toLocaleString()}`,
-        range.from,
-        range.to,
+        `本群聊天频次 (${new Date(range.start).toLocaleString()} - ${new Date(range.end).toLocaleString()}`,
+        range.start as number,
+        range.end as number,
         step,
       );
       const chart = await ctx.echarts.createChartPNG(
         options.height || 1200,
-        options.width || 800,
+        options.width || 900,
         option as any,
       );
       return h.image(chart, "image/png");
@@ -74,6 +77,55 @@ export default function apply(ctx: Context, config: Config) {
         options.height || 500,
         options.width || 400,
         option as any,
+      );
+      return h.image(chart, "image/png");
+    });
+
+  ctx
+    .command("stats.rank [rangeInput:string]", "生成群聊天的活跃度排行榜。")
+    .option("length", "-l [length]")
+    .option("guildId", "-g [guildId]")
+    .option("width", "-w [width:number]")
+    .option("height", "-he [height:number]")
+    .action(async ({ session, options }, rangeInput) => {
+      const rangeString = rangeInput ?? "today";
+      const guildId = options.guildId ?? session.guildId;
+      const length = options.length ?? 10;
+      const range = TimeRangeParser.parseDateInput(rangeString);
+      if ("error" in range) {
+        return range.error;
+      }
+
+      const endTimestamp = new Date(range.end).getTime() / 1000; // ms to s
+      const queryRange = `[${endTimestamp / 60 / 60 - (range.start as number) / 1000 / 60 / 60}h]`;
+      const result = await ctx.stats.queryClient
+        .instantQuery(
+          `topk(${length}, count(message_length{guildId="${guildId}"}${queryRange} @ ${endTimestamp}) by (userId))`,
+        )
+        .catch((e) => ctx.logger.error(e));
+      if (!result) return "遇到错误，控制台查看详情。";
+      const dataPromises = result.result
+        .reverse()
+        .map(async ({ metric: { userId }, value: { 1: times } }) => {
+          const user = await session?.bot?.getGuildMember(
+            session.guildId,
+            userId,
+          );
+          return {
+            avatar: user.avatar, // can be undefined
+            name: user.nick || user.name || (userId as string),
+            value: Number(times),
+          };
+        });
+
+      const data = await Promise.all(dataPromises);
+      const chart = await ctx.echarts.createChartPNG(
+        options.height || 800,
+        options.width || 300,
+        generateRankOption(
+          `本群聊天排行 (${new Date(range.start).toLocaleString()} - ${new Date(range.end).toLocaleString()}`,
+          data,
+        ) as any,
       );
       return h.image(chart, "image/png");
     });
