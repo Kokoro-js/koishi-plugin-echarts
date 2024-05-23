@@ -44,7 +44,7 @@ export function generateHeatmapOption(data, range) {
     calendar: {
       top: "35%", // 调整顶部间距，使图表在页面中央
       left: "center",
-      cellSize: [40, 40],
+      cellSize: [60, 50],
       yearLabel: { show: false },
       orient: "vertical",
       dayLabel: {

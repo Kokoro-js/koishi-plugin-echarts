@@ -21,7 +21,7 @@ export default async function apply(ctx: Context, config: Config) {
     .option("width", "-w [width:number]")
     .option("height", "-he [height:number]")
     .action(async ({ session, options }, rangeInput) => {
-      const rangeString = rangeInput ?? "now -> 1d";
+      const rangeString = rangeInput ?? "today";
       const guildId = options.guildId ?? session.guildId;
       const range = TimeRangeParser.parseDateInput(rangeString);
       if ("error" in range) {
@@ -30,7 +30,7 @@ export default async function apply(ctx: Context, config: Config) {
 
       const step = (options.step ?? 30) * 60; // step 单位为分钟，转化为秒
       const result = await ctx.stats.queryClient.rangeQuery(
-        `count(message_length{guildId="${guildId}"})`,
+        `count_over_time(message_length{guildId="${guildId}"}[1m])`,
         range.start,
         range.end,
         step,
@@ -62,14 +62,17 @@ export default async function apply(ctx: Context, config: Config) {
         return "没有大于 12 的月份噢。";
       }
       const range = getMonthRange(options.year, monthNumber);
+      const now = new Date().getTime();
+      if (range.start > now) return "怎么能查询未来的数据呢？";
       const guildId = options.guildId ?? session.guildId;
       const step = 86400;
       const result = await ctx.stats.queryClient.rangeQuery(
-        `count(message_length{guildId="${guildId}"})`,
+        `sum without (userId,type) (count_over_time({__name__="message_length", guildId="${guildId}"}[1d]))`,
         range.start,
         range.end,
         step,
       );
+      ctx.logger.info(result);
       const heatmapData = formatDataForEChartsHeatmap(result);
       const option = generateHeatmapOption(heatmapData, range.range);
 
@@ -85,22 +88,28 @@ export default async function apply(ctx: Context, config: Config) {
     .command("stats.rank [rangeInput:string]", "生成群聊天的活跃度排行榜。")
     .option("length", "-l [length]")
     .option("guildId", "-g [guildId]")
+    .option("type", "-t [type]")
     .option("width", "-w [width:number]")
     .option("height", "-he [height:number]")
     .action(async ({ session, options }, rangeInput) => {
       const rangeString = rangeInput ?? "today";
       const guildId = options.guildId ?? session.guildId;
       const length = options.length ?? 10;
+      const contentType = options.type ?? "text";
       const range = TimeRangeParser.parseDateInput(rangeString);
       if ("error" in range) {
         return range.error;
       }
 
       const endTimestamp = new Date(range.end).getTime() / 1000; // ms to s
-      const queryRange = `[${endTimestamp / 60 / 60 - (range.start as number) / 1000 / 60 / 60}h]`;
+      const durationHours =
+        (endTimestamp - new Date(range.start).getTime() / 1000) / 3600;
+      const queryRange = `[${durationHours}h]`;
       const result = await ctx.stats.queryClient
         .instantQuery(
-          `topk(${length}, count(message_length{guildId="${guildId}"}${queryRange} @ ${endTimestamp}) by (userId))`,
+          `
+      topk(${length}, sum by (userId) (count_over_time(message_length{guildId="${guildId}",type="${contentType}"}${queryRange})) @ ${endTimestamp})
+    `,
         )
         .catch((e) => ctx.logger.error(e));
       if (!result) return "遇到错误，控制台查看详情。";
@@ -121,9 +130,9 @@ export default async function apply(ctx: Context, config: Config) {
       const data = await Promise.all(dataPromises);
       const chart = await ctx.echarts.createChartPNG(
         options.height || 800,
-        options.width || 300,
+        options.width || 450,
         generateRankOption(
-          `本群聊天排行 (${new Date(range.start).toLocaleString()} - ${new Date(range.end).toLocaleString()}`,
+          `本群聊天排行 [类型 ${contentType}] (${new Date(range.start).toLocaleString()} - ${new Date(range.end).toLocaleString()}`,
           data,
         ) as any,
       );

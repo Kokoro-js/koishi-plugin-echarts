@@ -62,6 +62,7 @@ export function generateRankOption(
   const seriesData = data.map((item) => item.value);
 
   return {
+    backgroundColor: "#2c3e50", // 设置背景色为深色
     tooltip: {
       trigger: "axis",
       axisPointer: {
@@ -70,6 +71,9 @@ export function generateRankOption(
     },
     title: {
       text: name,
+      textStyle: {
+        color: "#ecf0f1", // 标题字体颜色设置为浅色
+      },
     },
     grid: {
       left: "3%",
@@ -80,11 +84,20 @@ export function generateRankOption(
     xAxis: {
       type: "value",
       boundaryGap: [0, 0.01],
+      axisLabel: {
+        color: "#ecf0f1", // x轴字体颜色设置为浅色
+      },
+      axisLine: {
+        lineStyle: {
+          color: "#ecf0f1", // x轴轴线颜色设置为浅色
+        },
+      },
     },
     yAxis: {
       type: "category",
       data: yAxisData,
       axisLabel: {
+        color: "#ecf0f1", // y轴字体颜色设置为浅色
         formatter: function (value, index) {
           const item = data[index];
           if (item.avatar) {
@@ -105,6 +118,11 @@ export function generateRankOption(
           },
         },
       },
+      axisLine: {
+        lineStyle: {
+          color: "#ecf0f1", // y轴轴线颜色设置为浅色
+        },
+      },
     },
     series: [
       {
@@ -114,6 +132,7 @@ export function generateRankOption(
         label: {
           show: true,
           position: "right",
+          color: "#ecf0f1", // 数据标签字体颜色设置为浅色
         },
         itemStyle: {
           color: function (params) {

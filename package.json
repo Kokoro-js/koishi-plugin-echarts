@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-echarts",
   "description": "Provide echarts with Canvas in Koishi",
-  "version": "0.4.6",
+  "version": "0.5.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -37,7 +37,7 @@
   "peerDependencies": {
     "koishi": "^4.17.0",
     "koishi-plugin-skia-canvas": "^0.4.0",
-    "koishi-plugin-stats": "^0.2.0"
+    "koishi-plugin-stats": "^0.3.0"
   },
   "dependencies": {
     "echarts": "^5.4.3"
